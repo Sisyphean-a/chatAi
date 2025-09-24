@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Bot, User, Paperclip, Image as ImageIcon } from 'lucide-react';
+import { Bot, User, Paperclip, Image as ImageIcon, Copy, Check } from 'lucide-react';
 import { Message } from '../../types';
 import ImagePreview from '../UI/ImagePreview';
+import { copyToClipboard } from '../../utils/helpers';
 
 interface MessageBubbleProps {
   message: Message;
@@ -9,11 +10,22 @@ interface MessageBubbleProps {
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
+  const isStreaming = message.isStreaming || false;
   const timestamp = new Date(message.timestamp).toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // 复制消息内容
+  const handleCopy = async () => {
+    const success = await copyToClipboard(message.content);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className={`flex items-start space-x-3 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -30,9 +42,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
       {/* 消息内容 */}
       <div className={`flex-1 max-w-3xl ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block rounded-lg px-4 py-3 ${
-          isUser 
-            ? 'bg-primary-600 text-white' 
+        <div className={`inline-block rounded-lg px-4 py-3 relative group ${
+          isUser
+            ? 'bg-primary-600 text-white'
             : 'bg-gray-100 text-gray-900'
         }`}>
           {/* 附件预览 */}
@@ -74,12 +86,38 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           {/* 文本内容 */}
           <div className="whitespace-pre-wrap break-words">
             {message.content}
+            {/* 流式传输光标 */}
+            {isStreaming && (
+              <span className="inline-block w-2 h-5 bg-current ml-1 animate-pulse" />
+            )}
           </div>
+
+          {/* 复制按钮 - 只在AI回复中显示 */}
+          {!isUser && message.content && !isStreaming && (
+            <button
+              onClick={handleCopy}
+              className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 ${
+                copied
+                  ? 'bg-green-100 text-green-600'
+                  : 'bg-white/80 text-gray-500 hover:bg-white hover:text-gray-700 opacity-0 group-hover:opacity-100'
+              }`}
+              title={copied ? '已复制' : '复制消息'}
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* 时间戳 */}
         <div className={`text-xs text-gray-500 mt-1 ${isUser ? 'text-right' : ''}`}>
           {timestamp}
+          {isStreaming && (
+            <span className="ml-2 text-blue-500">正在输入...</span>
+          )}
         </div>
       </div>
 

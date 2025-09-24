@@ -4,6 +4,7 @@ export interface Message {
   content: string;
   timestamp: number;
   attachments?: Attachment[];
+  isStreaming?: boolean; // 新增：标识消息是否正在流式传输
 }
 
 export interface Attachment {
@@ -29,10 +30,21 @@ export interface ChatState {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
+  streamController?: AbortController; // 新增：用于控制流式传输
+}
+
+// 新增：对话会话接口
+export interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface AppState {
   config: ChatConfig;
-  chat: ChatState;
+  conversations: Conversation[]; // 修改：从单个chat改为多个conversations
+  currentConversationId: string | null; // 新增：当前对话ID
   showSettings: boolean;
 }

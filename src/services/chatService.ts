@@ -3,6 +3,165 @@ import { ChatConfig, Message, ChatState, Attachment } from '../types';
 import { generateId } from '../utils/helpers';
 import { processFile } from '../utils/fileProcessor';
 
+// 流式传输回调类型
+export interface StreamCallbacks {
+  onStart?: () => void;
+  onToken?: (token: string) => void;
+  onComplete?: (fullContent: string) => void;
+  onError?: (error: string) => void;
+}
+
+// 流式传输发送消息
+export const sendMessageStream = async (
+  content: string,
+  attachments: File[] | undefined,
+  config: ChatConfig,
+  previousMessages: Message[],
+  callbacks: StreamCallbacks,
+  abortController?: AbortController
+): Promise<ChatState> => {
+  // 处理附件
+  const processedAttachments: Attachment[] = [];
+  if (attachments && attachments.length > 0) {
+    for (const file of attachments) {
+      try {
+        const attachment = await processFile(file);
+        processedAttachments.push(attachment);
+      } catch (error) {
+        console.error('处理文件失败:', error);
+        throw new Error(`处理文件 ${file.name} 失败`);
+      }
+    }
+  }
+
+  // 创建用户消息
+  const userMessage: Message = {
+    id: generateId(),
+    role: 'user',
+    content,
+    timestamp: Date.now(),
+    attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
+  };
+
+  // 更新消息列表
+  const updatedMessages = [...previousMessages, userMessage];
+
+  // 准备发送给 API 的消息
+  const apiMessages = prepareApiMessages(updatedMessages);
+
+  try {
+    callbacks.onStart?.();
+
+    // 构建请求配置
+    const requestBody = {
+      model: config.model,
+      messages: apiMessages,
+      temperature: config.temperature,
+      ...(config.maxTokens !== null && { max_tokens: config.maxTokens }),
+      stream: true,
+    };
+
+    const response = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+        ...config.customHeaders,
+      },
+      body: JSON.stringify(requestBody),
+      signal: abortController?.signal,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `请求失败 (${response.status})`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullContent = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Append new chunk to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines from buffer
+        while (true) {
+          const lineEnd = buffer.indexOf('\n');
+          if (lineEnd === -1) break;
+
+          const line = buffer.slice(0, lineEnd).trim();
+          buffer = buffer.slice(lineEnd + 1);
+
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                callbacks.onToken?.(content);
+              }
+            } catch (e) {
+              // Ignore invalid JSON
+            }
+          }
+        }
+      }
+    } finally {
+      reader.cancel();
+    }
+
+    callbacks.onComplete?.(fullContent);
+
+    const assistantMessage: Message = {
+      id: generateId(),
+      role: 'assistant',
+      content: fullContent,
+      timestamp: Date.now(),
+    };
+
+    return {
+      messages: [...updatedMessages, assistantMessage],
+      isLoading: false,
+      error: null,
+    };
+
+  } catch (error) {
+    console.error('流式API请求失败:', error);
+
+    let errorMessage = '发送消息失败';
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = '请求已取消';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
+    callbacks.onError?.(errorMessage);
+
+    return {
+      messages: updatedMessages,
+      isLoading: false,
+      error: errorMessage,
+    };
+  }
+};
+
+// 非流式传输发送消息（保留兼容性）
 export const sendMessage = async (
   content: string,
   attachments: File[] | undefined,

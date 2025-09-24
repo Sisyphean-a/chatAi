@@ -1,8 +1,10 @@
-import { ChatConfig, Message } from '../types';
+import { ChatConfig, Message, Conversation } from '../types';
 
 const STORAGE_KEYS = {
   CONFIG: 'chatgpt-web-config',
-  MESSAGES: 'chatgpt-web-messages',
+  MESSAGES: 'chatgpt-web-messages', // 保留兼容性
+  CONVERSATIONS: 'chatgpt-web-conversations', // 新增：对话列表
+  CURRENT_CONVERSATION: 'chatgpt-web-current-conversation', // 新增：当前对话ID
   SETTINGS: 'chatgpt-web-settings',
   SIDEBAR_WIDTH: 'chatgpt-web-sidebar-width',
 };
@@ -26,7 +28,69 @@ export const loadConfig = (): ChatConfig | null => {
   }
 };
 
-// 消息历史相关
+// 对话管理相关
+export const saveConversations = (conversations: Conversation[]): void => {
+  try {
+    // 只保存最近的 50 个对话，每个对话最多 100 条消息
+    const conversationsToSave = conversations.slice(-50).map(conv => ({
+      ...conv,
+      messages: conv.messages.slice(-100)
+    }));
+    localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(conversationsToSave));
+  } catch (error) {
+    console.error('保存对话失败:', error);
+  }
+};
+
+export const loadConversations = (): Conversation[] => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+
+    // 兼容旧版本：如果没有对话数据但有消息数据，则迁移
+    const oldMessages = loadMessages();
+    if (oldMessages.length > 0) {
+      const migratedConversation: Conversation = {
+        id: 'migrated-' + Date.now(),
+        title: '历史对话',
+        messages: oldMessages,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      return [migratedConversation];
+    }
+
+    return [];
+  } catch (error) {
+    console.error('加载对话失败:', error);
+    return [];
+  }
+};
+
+export const saveCurrentConversationId = (conversationId: string | null): void => {
+  try {
+    if (conversationId) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_CONVERSATION, conversationId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_CONVERSATION);
+    }
+  } catch (error) {
+    console.error('保存当前对话ID失败:', error);
+  }
+};
+
+export const loadCurrentConversationId = (): string | null => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.CURRENT_CONVERSATION);
+  } catch (error) {
+    console.error('加载当前对话ID失败:', error);
+    return null;
+  }
+};
+
+// 消息历史相关（保留兼容性）
 export const saveMessages = (messages: Message[]): void => {
   try {
     // 只保存最近的 100 条消息
@@ -163,6 +227,48 @@ export const importData = (jsonData: string): { success: boolean; error?: string
       error: error instanceof Error ? error.message : '导入失败'
     };
   }
+};
+
+// 对话工具函数
+export const generateConversationTitle = (messages: Message[]): string => {
+  const firstUserMessage = messages.find(msg => msg.role === 'user');
+  if (firstUserMessage) {
+    const content = firstUserMessage.content.trim();
+    if (content.length > 30) {
+      return content.substring(0, 30) + '...';
+    }
+    return content || '新对话';
+  }
+  return '新对话';
+};
+
+export const createNewConversation = (): Conversation => {
+  return {
+    id: 'conv-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+    title: '新对话',
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+};
+
+export const updateConversation = (
+  conversations: Conversation[],
+  conversationId: string,
+  updates: Partial<Conversation>
+): Conversation[] => {
+  return conversations.map(conv =>
+    conv.id === conversationId
+      ? { ...conv, ...updates, updatedAt: Date.now() }
+      : conv
+  );
+};
+
+export const deleteConversation = (
+  conversations: Conversation[],
+  conversationId: string
+): Conversation[] => {
+  return conversations.filter(conv => conv.id !== conversationId);
 };
 
 // 清除所有数据
