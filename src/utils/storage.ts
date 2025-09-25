@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   CURRENT_CONVERSATION: 'chatgpt-web-current-conversation', // 新增：当前对话ID
   SETTINGS: 'chatgpt-web-settings',
   SIDEBAR_WIDTH: 'chatgpt-web-sidebar-width',
+  CUSTOM_MODELS: 'chatgpt-web-custom-models', // 新增：自定义模型列表
 };
 
 // 配置相关
@@ -269,6 +270,52 @@ export const deleteConversation = (
   conversationId: string
 ): Conversation[] => {
   return conversations.filter(conv => conv.id !== conversationId);
+};
+
+// 自定义模型管理
+export const saveCustomModels = (models: string[]): void => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_MODELS, JSON.stringify(models));
+  } catch (error) {
+    console.error('保存自定义模型失败:', error);
+  }
+};
+
+export const loadCustomModels = (): string[] => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_MODELS);
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error('加载自定义模型失败:', error);
+    return [];
+  }
+};
+
+export const addCustomModel = (model: string): string[] => {
+  try {
+    const currentModels = loadCustomModels();
+    if (!currentModels.includes(model)) {
+      const updatedModels = [...currentModels, model];
+      saveCustomModels(updatedModels);
+      return updatedModels;
+    }
+    return currentModels;
+  } catch (error) {
+    console.error('添加自定义模型失败:', error);
+    return loadCustomModels();
+  }
+};
+
+export const removeCustomModel = (model: string): string[] => {
+  try {
+    const currentModels = loadCustomModels();
+    const updatedModels = currentModels.filter(m => m !== model);
+    saveCustomModels(updatedModels);
+    return updatedModels;
+  } catch (error) {
+    console.error('删除自定义模型失败:', error);
+    return loadCustomModels();
+  }
 };
 
 // 清除所有数据

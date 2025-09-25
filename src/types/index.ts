@@ -24,6 +24,7 @@ export interface ChatConfig {
   temperature: number;
   maxTokens: number | null;
   customHeaders?: Record<string, string>;
+  customModels?: string[]; // 新增：用户自定义的模型列表
 }
 
 export interface ChatState {

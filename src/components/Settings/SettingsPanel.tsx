@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { X, Save, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { ChatConfig } from '../../types';
 import DataManagement from './DataManagement';
+import ModelSelector from './ModelSelector';
+import { loadCustomModels, addCustomModel, removeCustomModel } from '../../utils/storage';
 
 interface SettingsPanelProps {
   config: ChatConfig;
@@ -17,6 +19,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [localConfig, setLocalConfig] = useState<ChatConfig>(config);
   const [showApiKey, setShowApiKey] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customModels, setCustomModels] = useState<string[]>([]);
+
+  // 加载自定义模型
+  useEffect(() => {
+    const models = loadCustomModels();
+    setCustomModels(models);
+    setLocalConfig(prev => ({
+      ...prev,
+      customModels: models
+    }));
+  }, []);
 
   const handleInputChange = (field: keyof ChatConfig, value: string | number) => {
     setLocalConfig(prev => ({
@@ -51,6 +64,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       newErrors.proxyUrl = '请输入有效的代理 URL';
     }
 
+    if (!localConfig.model.trim()) {
+      newErrors.model = '请选择一个模型';
+    }
+
     if (localConfig.temperature < 0 || localConfig.temperature > 2) {
       newErrors.temperature = 'Temperature 应在 0-2 之间';
     }
@@ -82,6 +99,29 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const handleReset = () => {
     setLocalConfig(config);
     setErrors({});
+  };
+
+  // 模型管理函数
+  const handleModelSelect = (model: string) => {
+    handleInputChange('model', model);
+  };
+
+  const handleAddCustomModel = (model: string) => {
+    const updatedModels = addCustomModel(model);
+    setCustomModels(updatedModels);
+    setLocalConfig(prev => ({
+      ...prev,
+      customModels: updatedModels
+    }));
+  };
+
+  const handleDeleteCustomModel = (model: string) => {
+    const updatedModels = removeCustomModel(model);
+    setCustomModels(updatedModels);
+    setLocalConfig(prev => ({
+      ...prev,
+      customModels: updatedModels
+    }));
   };
 
   return (
@@ -175,31 +215,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* 模型 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              模型
+              模型 *
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                list="model-options"
-                value={localConfig.model}
-                onChange={(e) => handleInputChange('model', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="输入模型名称或选择预设"
-              />
-              <datalist id="model-options">
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
-                <option value="gpt-4-vision-preview">GPT-4 Vision Preview</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16K</option>
-                <option value="claude-3-opus">Claude 3 Opus</option>
-                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                <option value="claude-3-haiku">Claude 3 Haiku</option>
-              </datalist>
-            </div>
+            <ModelSelector
+              selectedModel={localConfig.model}
+              customModels={customModels}
+              onModelSelect={handleModelSelect}
+              onAddCustomModel={handleAddCustomModel}
+              onDeleteCustomModel={handleDeleteCustomModel}
+              className={errors.model ? 'border-red-300' : ''}
+            />
+            {errors.model && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {errors.model}
+              </p>
+            )}
             <p className="text-xs text-gray-500 mt-1">
-              可以输入自定义模型名称，或从下拉列表选择
+              选择预设模型或添加自定义模型名称
             </p>
           </div>
 
@@ -241,7 +274,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               value={localConfig.maxTokens || ''}
               onChange={(e) => {
                 const value = e.target.value;
-                handleInputChange('maxTokens', value === '' ? null : parseInt(value));
+                const numValue = value === '' ? null : parseInt(value);
+                setLocalConfig(prev => ({
+                  ...prev,
+                  maxTokens: numValue,
+                }));
+                
+                // 清除对应字段的错误
+                if (errors.maxTokens) {
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.maxTokens;
+                    return newErrors;
+                  });
+                }
               }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                 errors.maxTokens ? 'border-red-300' : 'border-gray-300'

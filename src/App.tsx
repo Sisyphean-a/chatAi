@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import ChatInterface from './components/Chat/ChatInterface';
 import ChatSidebar from './components/Chat/ChatSidebar';
 import SettingsPanel from './components/Settings/SettingsPanel';
@@ -24,10 +24,11 @@ const defaultConfig: ChatConfig = {
   apiKey: '',
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   proxyUrl: '',
-  model: 'gpt-4',
+  model: '', // 默认为空，需要用户选择
   temperature: 0.7,
   maxTokens: null,
   customHeaders: {},
+  customModels: [],
 };
 
 function App() {
@@ -196,10 +197,9 @@ function App() {
   };
 
   // 检查是否已配置
-  const isConfigured = appState.config.apiKey.trim() !== '';
+  const isConfigured = appState.config.apiKey.trim() !== '' && appState.config.model.trim() !== '';
 
   // 确保有当前对话
-  const currentConversation = getCurrentConversation();
   const currentChatState = getCurrentChatState();
 
   return (
@@ -226,7 +226,7 @@ function App() {
                 欢迎使用 ChatGPT 对话
               </h2>
               <p className="text-gray-600 mb-4">
-                请先在设置中配置您的 API Key 和相关参数
+                请先在设置中配置您的 API Key 和选择模型
               </p>
               <button
                 onClick={toggleSettings}
