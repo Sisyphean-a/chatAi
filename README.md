@@ -198,12 +198,6 @@ npm run build
 
 构建产物在 `dist/` 目录，可以部署到任何静态托管服务。
 
-### Docker 部署
-
-```bash
-docker build -t chatgpt-web .
-docker run -p 3000:3000 chatgpt-web
-```
 
 ## 许可证
 

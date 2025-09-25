@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, RefreshCw, AlertCircle, Bot, User } from 'lucide-react';
+import { RefreshCw, AlertCircle, Bot } from 'lucide-react';
 import { Message } from '../../types';
 import MessageBubble from './MessageBubble';
 
@@ -8,7 +8,6 @@ interface MessageListProps {
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
-  onClearChat: () => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -16,7 +15,6 @@ const MessageList: React.FC<MessageListProps> = ({
   isLoading,
   error,
   onRetry,
-  onClearChat,
 }) => {
   if (messages.length === 0 && !isLoading && !error) {
     return (

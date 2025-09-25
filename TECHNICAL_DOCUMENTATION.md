@@ -327,10 +327,6 @@ export default defineConfig({
 - 构建时环境变量注入
 - 生产环境优化
 
-### 3. Docker 支持
-- 多阶段构建
-- Nginx 静态文件服务
-- 容器化部署
 
 ## 扩展建议
 

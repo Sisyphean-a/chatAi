@@ -218,7 +218,7 @@ export const sendMessage = async (
     // 如果配置了代理，添加代理设置
     if (config.proxyUrl) {
       const proxyUrl = new URL(config.proxyUrl);
-      requestConfig.proxy = {
+      (requestConfig as any).proxy = {
         protocol: proxyUrl.protocol.slice(0, -1),
         host: proxyUrl.hostname,
         port: parseInt(proxyUrl.port) || (proxyUrl.protocol === 'https:' ? 443 : 80),

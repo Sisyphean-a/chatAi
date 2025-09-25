@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ChatConfig, ChatState, Message } from '../../types';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -147,14 +147,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // 清空对话
-  const handleClearChat = () => {
-    onUpdateChat({
-      messages: [],
-      isLoading: false,
-      error: null,
-    });
-  };
 
   // 重试最后一条消息
   const handleRetry = () => {
@@ -196,7 +188,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             isLoading={chatState.isLoading && !streamingMessage}
             error={chatState.error}
             onRetry={handleRetry}
-            onClearChat={handleClearChat}
           />
           <div ref={messagesEndRef} />
         </div>

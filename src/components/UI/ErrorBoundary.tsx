@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 interface Props {
@@ -48,7 +48,7 @@ class ErrorBoundary extends Component<Props, State> {
           >
             重试
           </button>
-          {process.env.NODE_ENV === 'development' && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <details className="mt-2">
               <summary className="text-xs text-red-500 cursor-pointer">
                 错误详情 (开发模式)

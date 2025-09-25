@@ -130,64 +130,7 @@ RewriteRule . /index.html [L]
 </IfModule>
 ```
 
-### 5. Docker 部署
-
-#### 创建 Dockerfile
-```dockerfile
-# 构建阶段
-FROM node:18-alpine as builder
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run build
-
-# 生产阶段
-FROM nginx:alpine
-
-# 复制构建文件
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# 复制 nginx 配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-#### 创建 nginx.conf
-```nginx
-server {
-    listen 80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # 缓存静态资源
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-}
-```
-
-#### 构建和运行
-```bash
-# 构建镜像
-docker build -t chatgpt-web .
-
-# 运行容器
-docker run -p 3000:80 chatgpt-web
-```
-
-### 6. CDN 部署
+### 5. CDN 部署
 
 #### 使用 AWS S3 + CloudFront
 
