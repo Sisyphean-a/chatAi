@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <defs>
+    <linearGradient id="chatGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 简化的聊天气泡 -->
+  <path d="M2 4C2 2.89543 2.89543 2 4 2H10C11.1046 2 12 2.89543 12 4V8C12 9.10457 11.1046 10 10 10H6L3 12V10C2.44772 10 2 9.55228 2 9V4Z" 
+        fill="url(#chatGradient16)"/>
+  
+  <!-- AI 回复气泡 -->
+  <path d="M4 6C4 4.89543 4.89543 4 6 4H12C13.1046 4 14 4.89543 14 6V10C14 11.1046 13.1046 12 12 12H8L5 14V12C4.44772 12 4 11.5523 4 11V6Z" 
+        fill="#F3F4F6" 
+        stroke="#10B981" 
+        stroke-width="0.5"/>
+  
+  <!-- 对话点 -->
+  <circle cx="5" cy="6" r="0.5" fill="white"/>
+  <circle cx="7" cy="6" r="0.5" fill="white" opacity="0.7"/>
+  <circle cx="9" cy="6" r="0.5" fill="white" opacity="0.5"/>
+</svg>
