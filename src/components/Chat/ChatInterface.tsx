@@ -190,7 +190,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div className="flex flex-col h-full">
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="max-w-3xl mx-auto px-4">
+        <div className="max-w-[90%] mx-auto px-4">
           <MessageList
             messages={displayMessages}
             isLoading={chatState.isLoading && !streamingMessage}
@@ -205,7 +205,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* 流式传输取消按钮 */}
       {streamingMessage && (
         <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="max-w-[90%] mx-auto flex items-center justify-between">
             <span className="text-sm text-gray-600">AI 正在回复中...</span>
             <button
               onClick={handleCancelStream}
@@ -220,7 +220,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* 输入区域 */}
       <div className="border-t border-gray-200 bg-white">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-[90%] mx-auto">
           <MessageInput
             onSendMessage={handleSendMessage}
             disabled={chatState.isLoading || !!streamingMessage}

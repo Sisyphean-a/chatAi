@@ -13,6 +13,7 @@ ChatAI 是一个基于 React + TypeScript 的现代化 Web 应用，实现了类
 - **状态管理**: React Hooks + Context API
 - **HTTP 客户端**: Axios 1.6
 - **图标库**: Lucide React
+- **Markdown 渲染**: React Markdown + 相关插件生态
 
 ### 开发工具
 - **代码检查**: ESLint + TypeScript ESLint
@@ -96,6 +97,7 @@ interface ChatConfig {
   temperature: number;
   maxTokens: number | null;
   customHeaders?: Record<string, string>;
+  customModels?: string[]; // 新增：用户自定义模型列表
 }
 
 // 聊天状态类型
@@ -208,7 +210,7 @@ interface AppState {
 #### MessageBubble
 - **职责**: 单条消息展示
 - **功能**: 消息内容渲染、附件显示、复制功能
-- **特性**: AI回复复制按钮（悬停显示）、流式传输光标动画
+- **特性**: AI回复复制按钮（悬停显示）、Markdown渲染、错误边界保护
 
 #### MessageInput
 - **职责**: 消息输入和文件上传
@@ -219,13 +221,33 @@ interface AppState {
 #### SettingsPanel
 - **职责**: 配置管理界面
 - **验证**: 实时表单验证
-- **功能**: API 配置、模型选择
+- **功能**: API 配置、智能模型选择器
+
+#### ModelSelector
+- **职责**: 智能模型选择和管理
+- **功能**: 预设模型列表、自定义模型添加/删除、分类显示
+- **特性**: 下拉选择、搜索过滤、模型管理
 
 #### DataManagement
 - **职责**: 数据导入导出
 - **功能**: 备份恢复、数据清理
 
 ### 3. 通用 UI 组件
+
+#### MarkdownRenderer
+- **职责**: Markdown 内容渲染
+- **功能**: 完整 Markdown 支持、代码高亮、数学公式、表格渲染
+- **特性**: 自定义样式、代码复制功能、错误处理
+
+#### StreamingMarkdown
+- **职责**: 流式传输的 Markdown 渲染
+- **功能**: 渐进色彩效果、智能内容解析、性能优化
+- **特性**: 兼容流式传输、错误边界保护
+
+#### ErrorBoundary
+- **职责**: React 错误边界组件
+- **功能**: 捕获组件错误、降级显示、错误恢复
+- **特性**: 开发模式错误详情、用户友好的错误提示
 
 #### ResizableSidebar
 - **职责**: 可调整大小的侧边栏
@@ -314,6 +336,8 @@ export default defineConfig({
 
 ### 1. 功能扩展
 - ✅ 多会话管理（已实现）
+- ✅ Markdown 渲染（已实现）
+- ✅ 智能模型选择（已实现）
 - 消息搜索
 - 主题切换
 - 语音输入

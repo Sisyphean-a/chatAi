@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Bot, User, Paperclip, Image as ImageIcon, Copy, Check } from 'lucide-react';
 import { Message } from '../../types';
 import ImagePreview from '../UI/ImagePreview';
-import StreamingText from './StreamingText';
+import StreamingMarkdown from './StreamingMarkdown';
+import ErrorBoundary from '../UI/ErrorBoundary';
 import { copyToClipboard } from '../../utils/helpers';
 
 interface MessageBubbleProps {
@@ -42,8 +43,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       </div>
 
       {/* 消息内容 */}
-      <div className={`flex-1 max-w-3xl ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block rounded-lg px-4 py-3 relative group ${
+      <div className={`flex-1 ${isUser ? 'text-right' : ''}`}>
+        <div className={`${isUser ? 'inline-block' : 'block'} rounded-lg px-4 py-3 relative group ${
           isUser
             ? 'bg-primary-600 text-white'
             : 'bg-gray-100 text-gray-900'
@@ -85,14 +86,30 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           )}
 
           {/* 文本内容 */}
-          <div className="whitespace-pre-wrap break-words">
-            <StreamingText
-              content={message.content}
-              isStreaming={isStreaming}
-              className="leading-relaxed"
-              gradientLength={isUser ? 8 : 15} // 用户消息较短渐变，AI回复较长渐变
-              minOpacity={isUser ? 0.5 : 0.3} // AI回复的渐变更明显
-            />
+          <div className={`${isUser ? 'whitespace-pre-wrap break-words' : ''}`}>
+            {isUser ? (
+              // 用户消息保持纯文本显示
+              <div className="whitespace-pre-wrap break-words leading-relaxed">
+                {message.content}
+              </div>
+            ) : (
+              // AI回复使用 Markdown 渲染，包装在错误边界中
+              <ErrorBoundary
+                fallback={
+                  <div className="whitespace-pre-wrap break-words leading-relaxed">
+                    {message.content}
+                  </div>
+                }
+              >
+                <StreamingMarkdown
+                  content={message.content}
+                  isStreaming={isStreaming}
+                  className="leading-relaxed"
+                  gradientLength={15}
+                  minOpacity={0.3}
+                />
+              </ErrorBoundary>
+            )}
           </div>
 
           {/* 复制按钮 - 只在AI回复中显示 */}
