@@ -44,7 +44,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
       {/* 消息内容 */}
       <div className={`flex-1 ${isUser ? 'text-right' : ''}`}>
-        <div className={`${isUser ? 'inline-block' : 'block'} rounded-lg px-4 py-3 relative group ${
+        <div className={`${isUser ? 'inline-block max-w-[80%]' : 'block max-w-[75%]'} rounded-lg px-4 py-3 relative group ${
           isUser
             ? 'bg-primary-600 text-white'
             : 'bg-gray-100 text-gray-900'

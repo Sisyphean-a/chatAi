@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import { ChatConfig, ChatState, Message } from '../../types';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -193,28 +192,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* 流式传输取消按钮 */}
-      {streamingMessage && (
-        <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
-          <div className="max-w-[90%] mx-auto flex items-center justify-between">
-            <span className="text-sm text-gray-600">AI 正在回复中...</span>
-            <button
-              onClick={handleCancelStream}
-              className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded transition-colors"
-            >
-              <X className="w-4 h-4" />
-              <span>停止生成</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 输入区域 */}
       <div className="border-t border-gray-200 bg-white">
         <div className="max-w-[90%] mx-auto">
           <MessageInput
             onSendMessage={handleSendMessage}
+            onCancelStream={handleCancelStream}
             disabled={chatState.isLoading || !!streamingMessage}
+            isStreaming={!!streamingMessage}
           />
         </div>
       </div>

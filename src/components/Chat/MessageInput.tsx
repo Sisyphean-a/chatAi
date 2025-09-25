@@ -1,14 +1,18 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon } from 'lucide-react';
+import { Send, Paperclip, X, Image as ImageIcon, Square } from 'lucide-react';
 
 interface MessageInputProps {
   onSendMessage: (content: string, attachments?: File[]) => void;
+  onCancelStream?: () => void;
   disabled?: boolean;
+  isStreaming?: boolean;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
+  onCancelStream,
   disabled = false,
+  isStreaming = false,
 }) => {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -191,15 +195,25 @@ const MessageInput: React.FC<MessageInputProps> = ({
             <Paperclip className="w-5 h-5" />
           </button>
 
-          {/* 发送按钮 */}
-          <button
-            onClick={handleSend}
-            disabled={disabled || (!message.trim() && attachments.length === 0)}
-            className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="发送消息"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+          {/* 发送/停止按钮 */}
+          {isStreaming ? (
+            <button
+              onClick={onCancelStream}
+              className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              title="停止生成"
+            >
+              <Square className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={disabled || (!message.trim() && attachments.length === 0)}
+              className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="发送消息"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* 隐藏的文件输入 */}

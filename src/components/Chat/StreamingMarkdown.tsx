@@ -21,11 +21,12 @@ const StreamingMarkdown: React.FC<StreamingMarkdownProps> = ({
   const MIN_OPACITY = minOpacity;
   const MAX_OPACITY = 1.0;
 
-  // 生成透明度数组 - 必须始终调用
+  // 生成透明度数组 - 必须始终调用（左深右浅）
   const opacityLevels = useMemo(() => {
     return Array.from({ length: GRADIENT_LENGTH }, (_, index) => {
       const position = index / (GRADIENT_LENGTH - 1);
-      return MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * position;
+      // 反转渐变方向：左边深色（高透明度），右边浅色（低透明度）
+      return MAX_OPACITY - (MAX_OPACITY - MIN_OPACITY) * position;
     });
   }, [GRADIENT_LENGTH, MIN_OPACITY, MAX_OPACITY]);
 
