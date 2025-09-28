@@ -6,6 +6,7 @@ const PRESET_MODELS = [
   { id: 'openai/gpt-5', name: 'GPT-5', category: 'OpenAI' },
   { id: 'openai/gpt-5-chat', name: 'GPT-5 Chat', category: 'OpenAI' },
   { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', category: 'OpenAI' },
+  { id: 'openai/gpt-5-nano', name: 'GPT-5 Nano', category: 'OpenAI' },
   { id: 'anthropic/claude-opus-4', name: 'Claude 4 Opus', category: 'Anthropic' },
   { id: 'anthropic/claude-sonnet-4', name: 'Claude 3 Sonnet', category: 'Anthropic' },
   { id: 'anthropic/claude-3.7-sonnet', name: 'Claude 3.7 Sonnet', category: 'Anthropic' },

@@ -86,10 +86,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           )}
 
           {/* 文本内容 */}
-          <div className={`${isUser ? 'whitespace-pre-wrap break-words' : ''}`}>
+          <div className={`${isUser ? 'whitespace-pre-wrap break-words text-left' : ''}`}>
             {isUser ? (
-              // 用户消息保持纯文本显示
-              <div className="whitespace-pre-wrap break-words leading-relaxed">
+              // 用户消息保持纯文本显示，但文本内容左对齐
+              <div className="whitespace-pre-wrap break-words leading-relaxed text-left">
                 {message.content}
               </div>
             ) : (

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Send, Paperclip, X, Image as ImageIcon, Square } from 'lucide-react';
+import ImageThumbnail from '../UI/ImageThumbnail';
+import ImagePreview from '../UI/ImagePreview';
 
 interface MessageInputProps {
   onSendMessage: (content: string, attachments?: File[]) => void;
@@ -17,6 +19,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,26 +141,31 @@ const MessageInput: React.FC<MessageInputProps> = ({
     <div className="p-4">
       {/* 附件预览 */}
       {attachments.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-3 flex flex-wrap gap-3">
           {attachments.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2 text-sm"
-            >
-              {file.type.startsWith('image/') ? (
-                <ImageIcon className="w-4 h-4 text-gray-600" />
-              ) : (
-                <Paperclip className="w-4 h-4 text-gray-600" />
-              )}
-              <span className="truncate max-w-32">{file.name}</span>
-              <span className="text-gray-500">({formatFileSize(file.size)})</span>
-              <button
-                onClick={() => removeAttachment(index)}
-                className="text-gray-400 hover:text-gray-600"
+            file.type.startsWith('image/') ? (
+              <ImageThumbnail
+                key={index}
+                file={file}
+                onRemove={() => removeAttachment(index)}
+                onPreview={(src, alt) => setPreviewImage({ src, alt })}
+              />
+            ) : (
+              <div
+                key={index}
+                className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2 text-sm"
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+                <Paperclip className="w-4 h-4 text-gray-600" />
+                <span className="truncate max-w-32">{file.name}</span>
+                <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                <button
+                  onClick={() => removeAttachment(index)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )
           ))}
         </div>
       )}
@@ -234,6 +242,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
             拖拽文件到这里上传
           </div>
         </div>
+      )}
+
+      {/* 图片预览 */}
+      {previewImage && (
+        <ImagePreview
+          src={previewImage.src}
+          alt={previewImage.alt}
+          onClose={() => setPreviewImage(null)}
+        />
       )}
     </div>
   );
