@@ -1,13 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon, Square } from 'lucide-react';
+import { Send, Paperclip, X, Image as ImageIcon, Square, Brain } from 'lucide-react';
 import ImageThumbnail from '../UI/ImageThumbnail';
 import ImagePreview from '../UI/ImagePreview';
 
 interface MessageInputProps {
-  onSendMessage: (content: string, attachments?: File[]) => void;
+  onSendMessage: (content: string, attachments?: File[], reasoningEnabled?: boolean) => void;
   onCancelStream?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
+  reasoningEnabled?: boolean;
+  onReasoningToggle?: (enabled: boolean) => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -15,6 +17,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   onCancelStream,
   disabled = false,
   isStreaming = false,
+  reasoningEnabled = false,
+  onReasoningToggle,
 }) => {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -52,10 +56,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
       return;
     }
 
-    onSendMessage(message.trim(), attachments);
+    onSendMessage(message.trim(), attachments, reasoningEnabled);
     setMessage('');
     setAttachments([]);
-    
+
     // 重置文本框高度
     setTimeout(() => {
       if (textareaRef.current) {
@@ -193,6 +197,23 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
         {/* 工具栏 */}
         <div className="absolute bottom-2 right-2 flex items-center space-x-2">
+          {/* 推理开关按钮 */}
+          <button
+            onClick={() => onReasoningToggle?.(!reasoningEnabled)}
+            disabled={disabled}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+              reasoningEnabled
+                ? 'bg-blue-100 text-blue-700 border border-blue-300 shadow-sm'
+                : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+            }`}
+            title={reasoningEnabled ? '关闭推理模式' : '开启推理模式'}
+          >
+            <div className="flex items-center space-x-1">
+              <Brain className="w-3.5 h-3.5" />
+              <span>推理</span>
+            </div>
+          </button>
+
           {/* 文件上传按钮 */}
           <button
             onClick={() => fileInputRef.current?.click()}

@@ -19,6 +19,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [reasoningEnabled, setReasoningEnabled] = useState<boolean>(config.reasoningEnabled || false);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -46,7 +47,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   // 发送消息（流式传输）
-  const handleSendMessage = async (content: string, attachments?: File[]) => {
+  const handleSendMessage = async (content: string, attachments?: File[], useReasoning?: boolean) => {
     if (!content.trim() && (!attachments || attachments.length === 0)) {
       return;
     }
@@ -89,11 +90,46 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       content: '',
       timestamp: Date.now(),
       isStreaming: true,
+      reasoning: undefined, // 初始化推理内容
     };
 
     const streamCallbacks: StreamCallbacks = {
       onStart: () => {
         setStreamingMessage(assistantMessage);
+      },
+      onReasoningStart: () => {
+        setStreamingMessage(prev => prev ? {
+          ...prev,
+          reasoning: {
+            content: '',
+            isStreaming: true,
+            isCollapsed: false, // 推理时展开显示
+          }
+        } : null);
+      },
+      onReasoningToken: (token: string) => {
+        setStreamingMessage(prev => prev ? {
+          ...prev,
+          reasoning: prev.reasoning ? {
+            ...prev.reasoning,
+            content: prev.reasoning.content + token,
+          } : {
+            content: token,
+            isStreaming: true,
+            isCollapsed: false,
+          }
+        } : null);
+      },
+      onReasoningComplete: (fullReasoning: string, summary?: string[]) => {
+        setStreamingMessage(prev => prev ? {
+          ...prev,
+          reasoning: {
+            content: fullReasoning,
+            isStreaming: false,
+            isCollapsed: true, // 推理完成后折叠
+            summary,
+          }
+        } : null);
       },
       onToken: (token: string) => {
         setStreamingMessage(prev => prev ? {
@@ -101,11 +137,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           content: prev.content + token,
         } : null);
       },
-      onComplete: (fullContent: string) => {
+      onComplete: (fullContent: string, reasoning?: { content: string; summary?: string[] }) => {
         const finalMessage: Message = {
           ...assistantMessage,
           content: fullContent,
           isStreaming: false,
+          reasoning: reasoning ? {
+            content: reasoning.content,
+            isStreaming: false,
+            isCollapsed: true, // 确保最终消息中推理是折叠的
+            summary: reasoning.summary,
+          } : undefined,
         };
 
         const finalMessages = [...updatedMessages, finalMessage];
@@ -138,7 +180,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         config,
         chatState.messages,
         streamCallbacks,
-        controller
+        controller,
+        useReasoning !== undefined ? useReasoning : reasoningEnabled
       );
     } catch (error) {
       // 错误已在 streamCallbacks.onError 中处理
@@ -172,6 +215,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  // 更新消息
+  const handleUpdateMessage = (messageId: string, updates: Partial<Message>) => {
+    const updatedMessages = chatState.messages.map(msg =>
+      msg.id === messageId ? { ...msg, ...updates } : msg
+    );
+
+    onUpdateChat({
+      ...chatState,
+      messages: updatedMessages,
+    });
+  };
+
+  // 处理推理开关
+  const handleReasoningToggle = (enabled: boolean) => {
+    setReasoningEnabled(enabled);
+  };
+
   // 合并显示的消息（包括流式消息）
   const displayMessages = streamingMessage
     ? [...chatState.messages, streamingMessage]
@@ -187,6 +247,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             isLoading={chatState.isLoading && !streamingMessage}
             error={chatState.error}
             onRetry={handleRetry}
+            onUpdateMessage={handleUpdateMessage}
           />
           <div ref={messagesEndRef} />
         </div>
@@ -201,6 +262,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onCancelStream={handleCancelStream}
             disabled={chatState.isLoading || !!streamingMessage}
             isStreaming={!!streamingMessage}
+            reasoningEnabled={reasoningEnabled}
+            onReasoningToggle={handleReasoningToggle}
           />
         </div>
       </div>

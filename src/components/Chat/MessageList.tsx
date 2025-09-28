@@ -8,6 +8,7 @@ interface MessageListProps {
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
+  onUpdateMessage?: (messageId: string, updates: Partial<Message>) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -15,6 +16,7 @@ const MessageList: React.FC<MessageListProps> = ({
   isLoading,
   error,
   onRetry,
+  onUpdateMessage,
 }) => {
   if (messages.length === 0 && !isLoading && !error) {
     return (
@@ -35,7 +37,11 @@ const MessageList: React.FC<MessageListProps> = ({
     <div className="py-6 space-y-6">
       {/* 消息列表 */}
       {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
+        <MessageBubble
+          key={message.id}
+          message={message}
+          onUpdateMessage={onUpdateMessage}
+        />
       ))}
 
       {/* 加载状态 */}

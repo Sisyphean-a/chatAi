@@ -7,7 +7,10 @@ import { processFile } from '../utils/fileProcessor';
 export interface StreamCallbacks {
   onStart?: () => void;
   onToken?: (token: string) => void;
-  onComplete?: (fullContent: string) => void;
+  onReasoningStart?: () => void;
+  onReasoningToken?: (token: string) => void;
+  onReasoningComplete?: (fullReasoning: string, summary?: string[]) => void;
+  onComplete?: (fullContent: string, reasoning?: { content: string; summary?: string[] }) => void;
   onError?: (error: string) => void;
 }
 
@@ -18,7 +21,8 @@ export const sendMessageStream = async (
   config: ChatConfig,
   previousMessages: Message[],
   callbacks: StreamCallbacks,
-  abortController?: AbortController
+  abortController?: AbortController,
+  reasoningEnabled?: boolean
 ): Promise<ChatState> => {
   // 处理附件
   const processedAttachments: Attachment[] = [];
@@ -59,6 +63,7 @@ export const sendMessageStream = async (
       temperature: config.temperature,
       ...(config.maxTokens !== null && { max_tokens: config.maxTokens }),
       stream: true,
+      ...(reasoningEnabled && { reasoning: { enabled: true } }),
     };
 
     const response = await fetch(config.apiUrl, {
@@ -85,6 +90,9 @@ export const sendMessageStream = async (
     const decoder = new TextDecoder();
     let buffer = '';
     let fullContent = '';
+    let fullReasoning = '';
+    let reasoningSummary: string[] = [];
+    let isReasoningStarted = false;
 
     try {
       while (true) {
@@ -108,10 +116,42 @@ export const sendMessageStream = async (
 
             try {
               const parsed = JSON.parse(data);
-              const content = parsed.choices[0]?.delta?.content;
-              if (content) {
-                fullContent += content;
-                callbacks.onToken?.(content);
+
+              // 检查是否有推理内容
+              const delta = parsed.choices?.[0]?.delta;
+              if (delta) {
+                // 处理推理内容
+                if (delta.reasoning) {
+                  if (!isReasoningStarted) {
+                    isReasoningStarted = true;
+                    callbacks.onReasoningStart?.();
+                  }
+                  const reasoningContent = delta.reasoning;
+                  if (reasoningContent) {
+                    fullReasoning += reasoningContent;
+                    callbacks.onReasoningToken?.(reasoningContent);
+                  }
+                }
+
+                // 处理推理详情和摘要
+                if (delta.reasoning_details) {
+                  for (const detail of delta.reasoning_details) {
+                    if (detail.type === 'reasoning.summary' && detail.summary) {
+                      reasoningSummary.push(detail.summary);
+                    }
+                  }
+                }
+
+                // 处理常规内容
+                const content = delta.content;
+                if (content) {
+                  // 如果有推理内容且这是第一个常规内容，标记推理完成
+                  if (isReasoningStarted && fullContent === '') {
+                    callbacks.onReasoningComplete?.(fullReasoning, reasoningSummary.length > 0 ? reasoningSummary : undefined);
+                  }
+                  fullContent += content;
+                  callbacks.onToken?.(content);
+                }
               }
             } catch (e) {
               // Ignore invalid JSON
@@ -123,13 +163,25 @@ export const sendMessageStream = async (
       reader.cancel();
     }
 
-    callbacks.onComplete?.(fullContent);
+    // 准备推理数据
+    const reasoningData = fullReasoning ? {
+      content: fullReasoning,
+      summary: reasoningSummary.length > 0 ? reasoningSummary : undefined
+    } : undefined;
+
+    callbacks.onComplete?.(fullContent, reasoningData);
 
     const assistantMessage: Message = {
       id: generateId(),
       role: 'assistant',
       content: fullContent,
       timestamp: Date.now(),
+      reasoning: fullReasoning ? {
+        content: fullReasoning,
+        isStreaming: false,
+        isCollapsed: true, // 默认折叠
+        summary: reasoningSummary.length > 0 ? reasoningSummary : undefined
+      } : undefined,
     };
 
     return {

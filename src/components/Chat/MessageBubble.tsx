@@ -3,14 +3,16 @@ import { Bot, User, Paperclip, Image as ImageIcon, Copy, Check } from 'lucide-re
 import { Message } from '../../types';
 import ImagePreview from '../UI/ImagePreview';
 import StreamingMarkdown from './StreamingMarkdown';
+import ReasoningDisplay from './ReasoningDisplay';
 import ErrorBoundary from '../UI/ErrorBoundary';
 import { copyToClipboard } from '../../utils/helpers';
 
 interface MessageBubbleProps {
   message: Message;
+  onUpdateMessage?: (messageId: string, updates: Partial<Message>) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onUpdateMessage }) => {
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
@@ -83,6 +85,23 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* 推理内容 - 仅在AI消息中显示 */}
+          {!isUser && message.reasoning && (
+            <ReasoningDisplay
+              reasoning={message.reasoning}
+              onToggleCollapse={() => {
+                if (onUpdateMessage && message.reasoning) {
+                  onUpdateMessage(message.id, {
+                    reasoning: {
+                      ...message.reasoning,
+                      isCollapsed: !message.reasoning.isCollapsed
+                    }
+                  });
+                }
+              }}
+            />
           )}
 
           {/* 文本内容 */}
