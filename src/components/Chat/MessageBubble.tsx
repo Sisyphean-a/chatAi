@@ -35,7 +35,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onUpdateMessage 
     <div className={`flex items-start space-x-3 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
       {/* 头像 */}
       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-        isUser ? 'bg-primary-600' : 'bg-gray-200'
+        isUser ? 'bg-primary-500' : 'bg-gray-200'
       }`}>
         {isUser ? (
           <User className="w-5 h-5 text-white" />
@@ -48,7 +48,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onUpdateMessage 
       <div className={`flex-1 ${isUser ? 'text-right' : ''}`}>
         <div className={`${isUser ? 'inline-block max-w-[80%]' : 'block max-w-[75%]'} rounded-lg px-4 py-3 relative group ${
           isUser
-            ? 'bg-primary-600 text-white'
+            ? 'bg-primary-500 text-white'
             : 'bg-gray-100 text-gray-900'
         }`}>
           {/* 附件预览 */}
@@ -59,7 +59,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onUpdateMessage 
                   key={attachment.id}
                   className={`flex items-center space-x-2 p-2 rounded border ${
                     isUser 
-                      ? 'bg-primary-700 border-primary-500' 
+                      ? 'bg-primary-500 border-primary-500' 
                       : 'bg-white border-gray-200'
                   }`}
                 >

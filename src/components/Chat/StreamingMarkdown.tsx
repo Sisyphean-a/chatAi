@@ -32,20 +32,60 @@ const StreamingMarkdown: React.FC<StreamingMarkdownProps> = ({
 
   // 流式传输时的处理 - 必须始终调用
   const processStreamingContent = useMemo(() => {
-    if (!content || !isStreaming) return { normalContent: content, gradientContent: '' };
-    
+    if (!content || !isStreaming) {
+      return {
+        completedLines: content,
+        currentLineNormal: '',
+        currentLineGradient: ''
+      };
+    }
+
     const totalLength = content.length;
-    
+
     // 如果内容长度小于渐变长度，全部应用渐变
     if (totalLength <= GRADIENT_LENGTH) {
-      return { normalContent: '', gradientContent: content };
+      return {
+        completedLines: '',
+        currentLineNormal: '',
+        currentLineGradient: content
+      };
     }
-    
-    // 分离正常内容和渐变内容
-    const normalContent = content.slice(0, totalLength - GRADIENT_LENGTH);
-    const gradientContent = content.slice(-GRADIENT_LENGTH);
-    
-    return { normalContent, gradientContent };
+
+    // 找到最后一个换行符的位置
+    const lastNewlineIndex = content.lastIndexOf('\n');
+
+    // 如果没有换行符，说明只有一行
+    if (lastNewlineIndex === -1) {
+      const currentLineNormal = content.slice(0, totalLength - GRADIENT_LENGTH);
+      const currentLineGradient = content.slice(-GRADIENT_LENGTH);
+      return {
+        completedLines: '',
+        currentLineNormal,
+        currentLineGradient
+      };
+    }
+
+    // 有换行符：分离已完成的行和当前行
+    const completedLines = content.slice(0, lastNewlineIndex + 1); // 包含最后的 \n
+    const currentLine = content.slice(lastNewlineIndex + 1);
+
+    // 对当前行应用渐变效果
+    if (currentLine.length <= GRADIENT_LENGTH) {
+      return {
+        completedLines,
+        currentLineNormal: '',
+        currentLineGradient: currentLine
+      };
+    }
+
+    const currentLineNormal = currentLine.slice(0, currentLine.length - GRADIENT_LENGTH);
+    const currentLineGradient = currentLine.slice(-GRADIENT_LENGTH);
+
+    return {
+      completedLines,
+      currentLineNormal,
+      currentLineGradient
+    };
   }, [content, GRADIENT_LENGTH, isStreaming]);
 
   // 尝试检测是否在代码块中 - 必须始终调用
@@ -73,45 +113,35 @@ const StreamingMarkdown: React.FC<StreamingMarkdownProps> = ({
   }, [opacityLevels, MAX_OPACITY, content.length]);
 
   // 获取处理后的内容
-  const { normalContent, gradientContent } = processStreamingContent;
+  const { completedLines, currentLineNormal, currentLineGradient } = processStreamingContent;
 
   // 如果不是流式传输，直接渲染 Markdown
   if (!isStreaming) {
     return (
-      <MarkdownRenderer 
-        content={content} 
+      <MarkdownRenderer
+        content={content}
         className={className}
       />
     );
   }
 
-  // 流式传输时，为了避免 Markdown 解析不完整的内容，我们采用更保守的策略
-  // 只有在内容较长且不在代码块中时才使用 Markdown 渲染
-  const shouldUseMarkdown = !isInCodeBlock && content.length > 50 && normalContent.length > 20;
-
-  if (!shouldUseMarkdown) {
-    // 使用纯文本渲染
-    return (
-      <div className={`whitespace-pre-wrap break-words ${className}`}>
-        {normalContent}
-        {gradientContent && renderGradientContent(gradientContent)}
-      </div>
-    );
-  }
-
-  // 对于较长的普通内容，尝试渲染 Markdown
+  // 流式传输时的渲染策略：
+  // 1. 已完成的行使用 Markdown 渲染（提供更好的视觉效果）
+  // 2. 当前行的已显示部分使用纯文本
+  // 3. 当前行的渐变部分应用透明度渐变效果
   return (
     <div className={className}>
-      {/* 正常内容部分用 Markdown 渲染 */}
-      {normalContent && (
-        <MarkdownRenderer content={normalContent} />
+      {/* 已完成的行：使用 Markdown 渲染 */}
+      {completedLines && (
+        <MarkdownRenderer content={completedLines} />
       )}
-      
-      {/* 渐变内容部分用纯文本渲染，避免 Markdown 解析不完整 */}
-      {gradientContent && (
-        <span className="whitespace-pre-wrap">
-          {renderGradientContent(gradientContent)}
-        </span>
+
+      {/* 当前行：使用纯文本渲染，确保渐变效果在同一行 */}
+      {(currentLineNormal || currentLineGradient) && (
+        <div className="whitespace-pre-wrap break-words">
+          {currentLineNormal}
+          {currentLineGradient && renderGradientContent(currentLineGradient)}
+        </div>
       )}
     </div>
   );

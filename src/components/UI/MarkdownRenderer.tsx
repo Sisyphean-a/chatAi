@@ -2,6 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
@@ -214,7 +215,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
         components={components}
-        remarkPlugins={[remarkGfm, remarkMath]}
+        remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
         rehypePlugins={[rehypeKatex, rehypeHighlight, rehypeRaw]}
         skipHtml={false}
       >
