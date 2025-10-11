@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChatConfig, ChatState, Message } from '../../types';
+import { ChatConfig, ChatState, Message, Attachment } from '../../types';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import { sendMessageStream, StreamCallbacks } from '../../services/chatService';
 import { generateId } from '../../utils/helpers';
+import { processFiles } from '../../utils/fileProcessor';
 
 interface ChatInterfaceProps {
   config: ChatConfig;
@@ -52,6 +53,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
+    let processedAttachments: Attachment[] | undefined;
+
+    if (attachments && attachments.length > 0) {
+      try {
+        const results = await processFiles(attachments);
+        processedAttachments = results.length > 0 ? results : undefined;
+      } catch (error) {
+        console.error('处理附件失败:', error);
+        const errorMessage = error instanceof Error ? error.message : '处理附件时发生未知错误';
+        onUpdateChat({
+          ...chatState,
+          isLoading: false,
+          error: errorMessage,
+        });
+        return;
+      }
+    }
+
     // 创建新的 AbortController
     const controller = new AbortController();
     setAbortController(controller);
@@ -62,14 +81,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       role: 'user',
       content,
       timestamp: Date.now(),
-      attachments: attachments?.map(file => ({
-        id: generateId(),
-        type: file.type.startsWith('image/') ? 'image' : 'file',
-        name: file.name,
-        content: '', // 这里会在 sendMessageStream 中处理
-        size: file.size,
-        mimeType: file.type,
-      })),
+      attachments: processedAttachments,
     };
 
     const updatedMessages = [...chatState.messages, userMessage];
@@ -176,7 +188,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try {
       await sendMessageStream(
         content,
-        attachments,
+        processedAttachments,
         config,
         chatState.messages,
         streamCallbacks,

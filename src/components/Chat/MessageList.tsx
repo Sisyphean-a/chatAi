@@ -25,9 +25,6 @@ const MessageList: React.FC<MessageListProps> = ({
           <h2 className="text-3xl font-semibold text-gray-900 mb-4">
             你好！有什么可以帮助你的吗？
           </h2>
-          <p className="text-gray-600 text-lg">
-            我是你的 AI 助手，可以回答问题、协助写作、分析文档等。请输入你的问题开始对话。
-          </p>
         </div>
       </div>
     );

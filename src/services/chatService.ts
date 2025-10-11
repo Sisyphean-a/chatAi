@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { ChatConfig, Message, ChatState, Attachment } from '../types';
 import { generateId } from '../utils/helpers';
-import { processFile } from '../utils/fileProcessor';
 
 // 流式传输回调类型
 export interface StreamCallbacks {
@@ -17,26 +16,13 @@ export interface StreamCallbacks {
 // 流式传输发送消息
 export const sendMessageStream = async (
   content: string,
-  attachments: File[] | undefined,
+  attachments: Attachment[] | undefined,
   config: ChatConfig,
   previousMessages: Message[],
   callbacks: StreamCallbacks,
   abortController?: AbortController,
   reasoningEnabled?: boolean
 ): Promise<ChatState> => {
-  // 处理附件
-  const processedAttachments: Attachment[] = [];
-  if (attachments && attachments.length > 0) {
-    for (const file of attachments) {
-      try {
-        const attachment = await processFile(file);
-        processedAttachments.push(attachment);
-      } catch (error) {
-        console.error('处理文件失败:', error);
-        throw new Error(`处理文件 ${file.name} 失败`);
-      }
-    }
-  }
 
   // 创建用户消息
   const userMessage: Message = {
@@ -44,7 +30,7 @@ export const sendMessageStream = async (
     role: 'user',
     content,
     timestamp: Date.now(),
-    attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
+    attachments,
   };
 
   // 更新消息列表
@@ -216,23 +202,10 @@ export const sendMessageStream = async (
 // 非流式传输发送消息（保留兼容性）
 export const sendMessage = async (
   content: string,
-  attachments: File[] | undefined,
+  attachments: Attachment[] | undefined,
   config: ChatConfig,
   previousMessages: Message[]
 ): Promise<ChatState> => {
-  // 处理附件
-  const processedAttachments: Attachment[] = [];
-  if (attachments && attachments.length > 0) {
-    for (const file of attachments) {
-      try {
-        const attachment = await processFile(file);
-        processedAttachments.push(attachment);
-      } catch (error) {
-        console.error('处理文件失败:', error);
-        throw new Error(`处理文件 ${file.name} 失败`);
-      }
-    }
-  }
 
   // 创建用户消息
   const userMessage: Message = {
@@ -240,7 +213,7 @@ export const sendMessage = async (
     role: 'user',
     content,
     timestamp: Date.now(),
-    attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
+    attachments,
   };
 
   // 更新消息列表
